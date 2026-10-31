@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Idle Pet - 寵物磚塊帝國</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #0b0f0b;
+            color: #00ff66;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 10px;
+            user-select: none;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            border: 1px solid #00ff66;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 1px solid #00ff66;
+            padding-bottom: 8px;
+            margin-top: 5px;
+            font-size: 1.4em;
+        }
+        .wallet-panel {
+            background: #111a11;
+            border: 1px solid #00ff66;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 1em;
+            font-weight: bold;
+        }
+        .currency { color: #ffff00; }
+        .cash { color: #00ffff; }
+        
+        .section-box {
+            background: #060d06;
+            border: 1px solid #1a4d1a;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .section-title {
+            color: #00ff66;
+            font-weight: bold;
+            border-bottom: 1px dashed #1a4d1a;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .wheel-container {
+            text-align: center;
+            position: relative;
+        }
+        .wheel-display {
+            width: 140px;
+            height: 140px;
+            border: 3px solid #00ff66;
+            border-radius: 50%;
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            background: #000;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+        }
+        button {
+            background-color: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.95em;
+            margin-top: 5px;
+            border-radius: 3px;
+        }
+        button:disabled {
+            background-color: #335533;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .item-card {
+            background: #111;
+            border: 1px solid #333;
+            padding: 8px;
+            font-size: 0.85em;
+        }
+        .item-count { font-size: 1.1em; color: #fff; font-weight: bold; }
+        .q-gray { color: #aaaaaa; border-color: #aaaaaa; }
+        .q-white { color: #ffffff; border-color: #ffffff; }
+        .q-green { color: #00ff66; border-color: #00ff66; }
+        .q-silver { color: #00ffff; border-color: #00ffff; }
+        .q-gold { color: #ffcc00; border-color: #ffcc00; }
+
+        .brick-list {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            text-align: center;
+            font-size: 0.8em;
+        }
+        .brick-card {
+            background: #080808;
+            border: 1px solid;
+            padding: 6px 2px;
+        }
+        .pet-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111a11;
+            border: 1px solid #1a4d1a;
+            padding: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+        }
+        .log-box {
+            background: #000;
+            border: 1px solid #1a4d1a;
+            height: 70px;
+            overflow-y: auto;
+            font-size: 0.75em;
+            padding: 5px;
+            color: #88bb88;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🐾 寵物磚塊帝國</h1>
+
+        <div class="wallet-panel">
+            <div>🟡 掛機金幣: <span id="coins" class="currency">0</span></div>
+            <div>💵 遊戲現金: $<span id="cash" class="cash">0</span></div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-title">🎰 材料大轉盤 (消耗 10 金幣/次)</div>
+            <div class="wheel-container">
+                <div id="wheelDisplay" class="wheel-display">❓</div>
+                <button id="spinBtn" onclick="spinWheel()">開啟轉盤抽獎</button>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <div class="section-title">📦 零件背包 & 磚塊合成</div>
+            <div class="inventory-grid">
+                <div class="item-card">🎨 噴漆<br><span id="mat_spray" class="item-count">0</span></div>
+                <div class="item-card">⚙️ 配件<br><span id="mat_part" class="item-count">0</span></div>
+                <div class="item-card">💎 吊飾<br><span id="mat_charm" class="item-count">0</span></div>
+            </div>
+            <button onclick="craftBrick()">🔨 合成磚塊 (消耗各 1 個材料)</button>
+        </div>
+
+        <div class="section-box">
+            <div class="section-title">🧱 磚塊倉庫</div>
+            <div class="brick-list">
+                <div class="brick-card q-gray">灰磚<br>$10<br><span id="brick_gray">0</span>塊</div>
+                <div class="brick-card q-white">白磚<br>$30<br><span id="brick_white">0</span>塊</div>
+                <div class="brick-card q-green">綠磚<br>$80<br><span id="brick_green">0</span>塊</div>
+                <div class="brick-card q-silver">銀磚<br>$250<br><span id="brick_silver">0</span>塊</div>
+                <div class="brick-card q-gold">金磚<br>$1000<br><span id="brick_gold">0</span>塊</div>
+            </div>
+            <button style="margin-top:10px; background:#00ffff;" onclick="sellAllBricks()">💰 一鍵賣出所有磚塊變現</button>
+        </div>
+
+        <div class="section-box">
+            <div class="section-title">🐶 掛機寵物隊伍 (當前收益: <span id="cps">1</span> 金幣/秒)</div>
+            <div id="petShop"></div>
+        </div>
+
+        <div class="log-box" id="gameLog">
+            [系統] 遊戲啟動完成！初始小狗已開始為你收集金幣...<br>
+        </div>
+    </div>
+
+    <script>
+        let gameData = {
+            coins: 0,
+            cash: 0,
+            materials: { spray: 0, part: 0, charm: 0 },
+            bricks: { gray: 0, white: 0, green: 0, silver: 0, gold: 0 },
+            pets: { dog: 1, cat: 0, robot: 0, dragon: 0 }
+        };
+
+        const petConfig = {
+            dog: { name: '🐶 忠誠小狗', baseIncome: 1, cost: 50 },
+            cat: { name: '🐱 招財小貓', baseIncome: 5, cost: 250 },
+            robot: { name: '🤖 採礦助手', baseIncome: 25, cost: 1200 },
+            dragon: { name: '🐲 納財金龍', baseIncome: 120, cost: 5000 }
+        };
+
+        const brickConfig = {
+            gray: { name: '灰磚', price: 10 },
+            white: { name: '白磚', price: 30 },
+            green: { name: '綠磚', price: 80 },
+            silver: { name: '銀磚', price: 250 },
+            gold: { name: '金磚', price: 1000 }
+        };
+
+        const wheelOptions = [
+            { id: 'spray', name: '🎨 噴漆' },
+            { id: 'part',  name: '⚙️ 配件' },
+            { id: 'charm', name: '💎 吊飾' }
+        ];
+
+        window.onload = function() {
+            loadGame();
+            renderPetShop();
+            updateUI();
+            setInterval(gameLoop, 1000);
+        };
+
+        function gameLoop() {
+            gameData.coins += getCPS();
+            updateUI();
+            saveGame();
+        }
+
+        function getCPS() {
+            let total = 0;
+            for (let petKey in gameData.pets) {
+                total += gameData.pets[petKey] * petConfig[petKey].baseIncome;
+            }
+            return total;
+        }
+
+        function spinWheel() {
+            if (gameData.coins < 10) {
+                log("⚠️ 金幣不足 10 個！");
+                return;
+            }
+            gameData.coins -= 10;
+            let btn = document.getElementById('spinBtn');
+            let display = document.getElementById('wheelDisplay');
+            btn.disabled = true;
+
+            let turns = 0;
+            let interval = setInterval(() => {
+                let randomOpt = wheelOptions[Math.floor(Math.random() * wheelOptions.length)];
+                display.innerText = randomOpt.name;
+                turns++;
+                if (turns > 10) {
+                    clearInterval(interval);
+                    let finalAward = wheelOptions[Math.floor(Math.random() * wheelOptions.length)];
+                    display.innerText = finalAward.name;
+                    gameData.materials[finalAward.id]++;
+                    log(`🎰 獲得了 【${finalAward.name}】！`);
+                    btn.disabled = false;
+                    updateUI();
+                }
+            }, 70);
+        }
+
+        function craftBrick() {
+            if (gameData.materials.spray >= 1 && gameData.materials.part >= 1 && gameData.materials.charm >= 1) {
+                gameData.materials.spray--;
+                gameData.materials.part--;
+                gameData.materials.charm--;
+
+                let rand = Math.random() * 100;
+                let gotQuality = 'gray';
+                if (rand < 3) gotQuality = 'gold';
+                else if (rand < 12) gotQuality = 'silver';
+                else if (rand < 30) gotQuality = 'green';
+                else if (rand < 60) gotQuality = 'white';
+                else gotQuality = 'gray';
+
+                gameData.bricks[gotQuality]++;
+                log(`🔨 合成成功！獲得【${brickConfig[gotQuality].name}】`);
+                updateUI();
+            } else {
+                log("⚠️ 材料不足！需要 噴漆x1 + 配件x1 + 吊飾x1");
+            }
+        }
+
+        function sellAllBricks() {
+            let totalEarned = 0;
+            for (let q in gameData.bricks) {
+                totalEarned += gameData.bricks[q] * brickConfig[q].price;
+                gameData.bricks[q] = 0;
+            }
+            if (totalEarned > 0) {
+                gameData.cash += totalEarned;
+                log(`💰 售出所有磚塊，賺得 $${totalEarned} 現金！`);
+                updateUI();
+            } else {
+                log("⚠️ 沒有可以賣出的磚塊。");
+            }
+        }
+
+        function buyPet(petKey) {
+            let pet = petConfig[petKey];
+            let currentCost = Math.floor(pet.cost * Math.pow(1.2, gameData.pets[petKey]));
+            if (gameData.cash >= currentCost) {
+                gameData.cash -= currentCost;
+                gameData.pets[petKey]++;
+                log(`🎉 購買 ${pet.name} 成功！`);
+                renderPetShop();
+                updateUI();
+            } else {
+                log(`⚠️ 現金不足，需要 $${currentCost}`);
+            }
+        }
+
+        function renderPetShop() {
+            let shopEl = document.getElementById('petShop');
+            let html = '';
+            for (let key in petConfig) {
+                let pet = petConfig[key];
+                let count = gameData.pets[key];
+                let currentCost = Math.floor(pet.cost * Math.pow(1.2, count));
+                html += `
+                    <div class="pet-item">
+                        <div>
+                            <strong>${pet.name}</strong> (有:${count})<br>
+                            <small style="color:#7ab87a;">+${pet.baseIncome}金幣/秒</small>
+                        </div>
+                        <button style="width:auto; padding:5px 10px;" onclick="buyPet('${key}')">買 ($${currentCost})</button>
+                    </div>
+                `;
+            }
+            shopEl.innerHTML = html;
+        }
+
+        function updateUI() {
+            document.getElementById('coins').innerText = Math.floor(gameData.coins);
+            document.getElementById('cash').innerText = Math.floor(gameData.cash);
+            document.getElementById('cps').innerText = getCPS();
+            document.getElementById('mat_spray').innerText = gameData.materials.spray;
+            document.getElementById('mat_part').innerText = gameData.materials.part;
+            document.getElementById('mat_charm').innerText = gameData.materials.charm;
+            for (let q in gameData.bricks) {
+                document.getElementById(`brick_${q}`).innerText = gameData.bricks[q];
+            }
+        }
+
+        function log(msg) {
+            let logBox = document.getElementById('gameLog');
+            logBox.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}<br>` + logBox.innerHTML;
+        }
+
+        function saveGame() {
+            localStorage.setItem('cyber_pet_idle_save', JSON.stringify(gameData));
+        }
+
+        function loadGame() {
+            let saved = localStorage.getItem('cyber_pet_idle_save');
+            if (saved) {
+                try {
+                    let parsed = JSON.parse(saved);
+                    gameData = { ...gameData, ...parsed };
+                } catch(e) {}
+            }
+        }
+    </script>
+</body>
+</html>
